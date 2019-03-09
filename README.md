@@ -1,4 +1,4 @@
-# col380_lab2_suite
+# PCA
 
 Problem Statement: Implement Principal Component Analysis with Singular Vector Decomposition
 
@@ -52,12 +52,7 @@ Your program should perform SVD and PCA on the given input and store the results
 - K : number of columns (features) in reduced matrix D_HAT
 - D_HAT : reduced matrix (to be computed by PCA)
 
-Refer to `lab2_omp.h` for more details. **Your program should not output anything on `stdout`.**  
+Refer to `lab2_omp.h` for more details. **The program should not output anything on `stdout`.**  
 
-## Submission Instructions
-- You are supposed to submit only one file named `lab2_omp.c/cpp`. Please make sure all the functions you have used are in this file.
-- Do not submit other files
-- Your code should build and execute as per the instructions given above. Please make sure that your code doesn't need any Makefile.
-- Your program should not output anything in `stdout`.
-
-We will not consider the submissions that don't comply with these guidelines.
+## Author
+Shreshth Tuli
