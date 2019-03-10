@@ -171,5 +171,36 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 // */
 void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** D_HAT, int *K)
 {
-    
+    float ret = float(retention)/100;
+    float sumeigen = 0;
+    for(int i = 0; i < N; i++){
+        sumeigen += SIGMA[i*N +i];
+    }
+
+    float sumret = 0; int k = 0;
+    for(k = 0; k < N; k++){
+        sumret += (SIGMA[k*N + k] / sumeigen);
+        if(sumret >= ret)
+            break;
+    }
+
+    *K = k+1;
+    float** W = empty_matrix(N, k+1);
+    for(int i = 0; i <= k; i++){
+        for(int j = 0; j < N; j++){
+            W[i][j] = U[i*N + j];
+        }
+    }
+
+    float* DHatTemp = (float *)malloc(sizeof(float)*((k+1) * M));
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < k+1; j++){
+            DHatTemp[i*N + j] = 0;
+            for(int p = 0; p < N; p++){
+                DHatTemp[i*N + j] += D[i*N + p] * W[p][j];
+            }
+        }
+    }
+
+    D_HAT = &DHatTemp;
 }
