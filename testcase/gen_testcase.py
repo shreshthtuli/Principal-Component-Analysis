@@ -19,8 +19,8 @@
 
 from random import uniform
 
-M = 10000           # number of rows (samples) in input matrix D
-N = 300             # number of columns (features) in input matrix
+M = 3          # number of rows (samples) in input matrix D
+N = 2            # number of columns (features) in input matrix
 lrange = -100000    # lrange <= element of matrix
 urange = 100000     # element of matrix <= urange
 

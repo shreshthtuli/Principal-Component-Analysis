@@ -3,6 +3,14 @@
 #include <math.h>
 #include <algorithm>
 
+void reverse_array(float* a, int N){
+    float* temp = new float[N];
+    for(int i = 0; i < N; i++)
+        temp[i] = a[i];
+    for(int i = 0; i < N; i++)
+        a[i] = temp[N-i-1];
+}
+
 float** empty_matrix(int m, int n){
     float** A = new float*[m];
     for(int i = 0; i < m; i++){
@@ -33,7 +41,7 @@ float** diagonal_matrix(int n){
 float dot(float** A, float** B, int cola, int colb, int N){
     float sum = 0;
     for(int i = 0; i < N; i++){
-        sum += A[cola][i] * B[colb][i];
+        sum += A[i][cola] * B[i][colb];
     }
     return sum;
 }
@@ -41,25 +49,19 @@ float dot(float** A, float** B, int cola, int colb, int N){
 float norm(float** A, int cola, int N){
     float sum = 0;
     for(int i = 0; i < N; i++){
-        sum += A[cola][i] * A[cola][i];
+        sum += A[i][cola] * A[i][cola];
     }
     return sqrt(sum);
 }
 
-float* getvi(int i, float** Q, float** A, int N){
-    float* res = new float[N];
-    for(int j = 0; j < N; j++)
-        res[j] = A[i][j];
-
-    float dotp = 0;
-    for(int j = 0; j < i; j++){
-        dotp = dot(A, Q, i, j, N);
-        for(int k = 0; k < N; k++){
-            res[k] -= dotp * Q[j][k];
-        }
+float norm_vector(float* A, int N){
+    float sum = 0;
+    for(int i = 0; i < N; i++){
+        sum += A[i] * A[i];
     }
-    return res;
+    return sqrt(sum);
 }
+
 
 float matrix_multiply(float** res, float** A, float** B, int N, int M, int N1){
     // Matrices shapes: A = NxM, B = MxN1, res = NxN1
@@ -70,7 +72,7 @@ float matrix_multiply(float** res, float** A, float** B, int N, int M, int N1){
             res[i][j] = 0;
             for(int k = 0; k < M; k++)
                 res[i][j] += A[i][k] * B[k][j];
-            diff += fabs(res[i][j] - old);
+            diff += fabs(fabs(res[i][j]) - fabs(old));
         }
     }
     return diff;
@@ -78,14 +80,28 @@ float matrix_multiply(float** res, float** A, float** B, int N, int M, int N1){
 
 void qr(float** Q, float** R, float** D, int N){
     for(int i = 0; i < N; i++){
-        float normi = norm(D, i, N);
-        float* vi = getvi(i, Q, D, N);
+        for(int j = 0; j < N; j++)
+            Q[j][i] = D[j][i];
 
-        for(int j = 0; j < N; j++)
-            Q[i][j] = vi[j] / normi;
+        for(int j = 0; j < i; j++){
+            R[j][i] = dot(Q, D, j, i, N);
+            for(int p = 0; p < N; p++)
+                Q[p][i] = Q[p][i] - R[j][i] * Q[p][j];
+        }
             
+        R[i][i] = norm(Q, i, N);
         for(int j = 0; j < N; j++)
-            R[i][j] = (j < i) ? 0 : dot(D, Q, j, i, N); 
+            Q[j][i] = Q[j][i]/R[i][i];
+    }
+}
+
+void print_matrix(float** A, int M, int N, char* name){
+    printf("\nMatrix %s\n", name);
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < N; j++){
+            printf("%f ", A[i][j]);
+        }
+        printf("\n");
     }
 }
 
@@ -110,62 +126,96 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
             Dt[j][i] = D[i*N + j];
         }
     }
+    print_matrix(Dt, N, M, "Dt\0");
 
     // Multiply D.Dt = MxN . NxM = MxM
     for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
             for(int k = 0; k < N; k++)
-                DDt[i][j] += Dt[i][k] * D[k*N + j];
+                DDt[i][j] += D[i*N + k] * Dt[k][j];
         }
     }
+    print_matrix(DDt, M, M, "DDt\0");
 
     // Get Eigenvalues of DDt i.e. Q and R
     float diff = 10;
     float** Di = empty_matrix(M, M);
     copy_matrix(Di, DDt, M, M);
     float** Ei = diagonal_matrix(M);
-    while(diff > 1){
+    float** Ei_temp = empty_matrix(M, M);
+    while(diff > 1.5){
         diff = 0;
         qr(Q, R, Di, M);
         diff += matrix_multiply(Di, R, Q, M, M, M);
-        diff += matrix_multiply(Ei, Ei, Q, M, M, M);
+        diff += matrix_multiply(Ei_temp, Ei, Q, M, M, M);
+        copy_matrix(Ei, Ei_temp, M, M);
+        printf("Diff = %f\n", diff);
+        // print_matrix(Q, M, M, "Q\0");
+        // print_matrix(R, M, M, "R\0");
+        // print_matrix(Di, M, M, "Di\0");
+        // print_matrix(Ei, M, M, "Ei\0");
     }
 
     // Extract eigenvalues into an array
     float* eigenvalues = new float[M];
     for(int i = 0; i < M; i++)
-        eigenvalues[i] = Di[i][i];
+        eigenvalues[i] = fabs(Di[i][i]);
     
     std::sort(eigenvalues, eigenvalues + M);
-    std::reverse(eigenvalues + M, eigenvalues);
+    reverse_array(eigenvalues, M);
+
+    for(int i = 0; i < M; i++)
+        printf("Eigenvalue %d is %f\n", i, eigenvalues[i]);
 
     float** sigma = empty_matrix(N, M);
     float** sigma_inv = empty_matrix(M, N);
     for(int i = 0; i < N; i++){
-        SIGMA[i][i] = sqrt(eigenvalues[i]);
-        sigma_inv[i][i] = (1 / SIGMA[i][i]);
+        *(*SIGMA+i) = sqrt(eigenvalues[i]);
+        sigma_inv[i][i] = (1.0 / sqrt(eigenvalues[i]));
+        printf("Sigma %d = %f\n", i, *(*SIGMA+i));
     }
 
     // Computer V_T
     for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
-            V_T[i][j] = R[j][i];
+            *(*V_T + M*i + j) = Ei[j][i];
         }
     }
     
-    float** temp = empty_matrix(N, M);
-    for(int i = 0; i < N; i++){
+    printf("Computed Vt\n");
+    // Print V_T
+    for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
-            for(int k = 0; k < M; k++)
-                temp[i][j] += Dt[i][k] * R[k][j];
+            printf("%f ",*(*V_T + M*i + j));
         }
+        printf("\n");
     }
-    matrix_multiply(temp, temp, sigma_inv, N, M, N);
+    printf("Computed Sigma-1\n");
+    // Print Sigma-1
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < M; j++){
+            printf("%f ",sigma_inv[i][j]);
+        }
+        printf("\n");
+    }
+
+    float** temp = empty_matrix(N, N);
+    float** temp2 = empty_matrix(N, N);
+    matrix_multiply(temp, Dt, Ei, N, M, N);
+    matrix_multiply(temp2, temp, sigma_inv, N, M, N);
 
     // Copy in U
     for(int i = 0; i < N; i++)
         for(int j = 0; j < N; j++)
-            *U[N*i + j] = temp[i][j]; 
+            *(*U + N*i + j) = temp2[i][j]; 
+
+    printf("U\n");
+    // Print U
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < N; j++)
+            printf("%f ", *(*U + N*i + j));
+        printf("\n");
+    }
 }
 
 // /*
@@ -178,32 +228,39 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     float ret = float(retention)/100;
     float sumeigen = 0;
     for(int i = 0; i < N; i++){
-        sumeigen += SIGMA[i*N +i];
+        sumeigen += *(SIGMA + i);
+        printf("Sigma %d is %f\n", i, *(SIGMA + i));
     }
 
     float sumret = 0; int k = 0;
     for(k = 0; k < N; k++){
-        sumret += (SIGMA[k*N + k] / sumeigen);
+        sumret += (*(SIGMA + k) / sumeigen);
         if(sumret >= ret)
             break;
     }
 
     *K = k+1;
+    printf("K = %d\n", *K);
     float** W = empty_matrix(N, k+1);
-    for(int i = 0; i <= k; i++){
-        for(int j = 0; j < N; j++){
-            W[i][j] = U[i*N + j];
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j <= k; j++){
+            W[i][j] = *(U + N*i + j);
         }
     }
 
+    print_matrix(W, N, *K, "W\0");
+
+    printf("D-Hat:\n");
     float* DHatTemp = (float *)malloc(sizeof(float)*((k+1) * M));
     for(int i = 0; i < M; i++){
-        for(int j = 0; j < k+1; j++){
-            DHatTemp[i*N + j] = 0;
+        for(int j = 0; j <= k; j++){
+            DHatTemp[i*(k+1) + j] = 0;
             for(int p = 0; p < N; p++){
-                DHatTemp[i*N + j] += D[i*N + p] * W[p][j];
+                DHatTemp[i*N + j] += *(D + i*N + p) * W[p][j];
             }
+            printf("%f ", DHatTemp[i*N + j]);
         }
+        printf("\n");
     }
 
     D_HAT = &DHatTemp;
