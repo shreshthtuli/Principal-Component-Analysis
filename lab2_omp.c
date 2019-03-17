@@ -3,59 +3,59 @@
 #include <math.h>
 #include <algorithm>
 
-void reverse_array(float* a, int N){
-    float* temp = new float[N];
+void reverse_array(double* a, int N){
+    double* temp = new double[N];
     for(int i = 0; i < N; i++)
         temp[i] = a[i];
     for(int i = 0; i < N; i++)
         a[i] = temp[N-i-1];
 }
 
-float** empty_matrix(int m, int n){
-    float** A = new float*[m];
+double** empty_matrix(int m, int n){
+    double** A = new double*[m];
     for(int i = 0; i < m; i++){
-        A[i] = new float[n];
+        A[i] = new double[n];
         for(int j = 0; j < n; j++)  
             A[i][j] = 0;
     }
     return A;
 }
 
-void copy_matrix(float** to, float** from, int n, int m){
+void copy_matrix(double** to, double** from, int n, int m){
     for(int i = 0; i < m; i++){
         for(int j = 0; j < n; j++)  
             to[i][j] = from[i][j];
     }
 }
 
-float** diagonal_matrix(int n){
-    float** A = new float*[n];
+double** diagonal_matrix(int n){
+    double** A = new double*[n];
     for(int i = 0; i < n; i++){
-        A[i] = new float[n];
+        A[i] = new double[n];
         for(int j = 0; j < n; j++)  
             A[i][j] = (i == j) ? 1 : 0;
     }
     return A;
 }
 
-float dot(float** A, float** B, int cola, int colb, int N){
-    float sum = 0;
+double dot(double** A, double** B, int cola, int colb, int N){
+    double sum = 0;
     for(int i = 0; i < N; i++){
         sum += A[i][cola] * B[i][colb];
     }
     return sum;
 }
 
-float norm(float** A, int cola, int N){
-    float sum = 0;
+double norm(double** A, int cola, int N){
+    double sum = 0;
     for(int i = 0; i < N; i++){
         sum += A[i][cola] * A[i][cola];
     }
     return sqrt(sum);
 }
 
-float norm_vector(float* A, int N){
-    float sum = 0;
+double norm_vector(double* A, double N){
+    double sum = 0;
     for(int i = 0; i < N; i++){
         sum += A[i] * A[i];
     }
@@ -63,9 +63,9 @@ float norm_vector(float* A, int N){
 }
 
 
-float matrix_multiply(float** res, float** A, float** B, int N, int M, int N1){
+double matrix_multiply(double** res, double** A, double** B, int N, int M, int N1){
     // Matrices shapes: A = NxM, B = MxN1, res = NxN1
-    float diff = 0; float old;
+    double diff = 0; double old;
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N1; j++){
             old = res[i][j];
@@ -78,7 +78,7 @@ float matrix_multiply(float** res, float** A, float** B, int N, int M, int N1){
     return diff;
 }
 
-void qr(float** Q, float** R, float** D, int N){
+void qr(double** Q, double** R, double** D, int N){
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N; j++)
             Q[j][i] = D[j][i];
@@ -95,7 +95,7 @@ void qr(float** Q, float** R, float** D, int N){
     }
 }
 
-void print_matrix(float** A, int M, int N, char* name){
+void print_matrix(double** A, int M, int N, char* name){
     printf("\nMatrix %s\n", name);
     for(int i = 0; i < M; i++){
         for(int j = 0; j < N; j++){
@@ -113,12 +113,12 @@ void print_matrix(float** A, int M, int N, char* name){
 void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 {
     // Dt is D transpose = NxM
-    float** Dt = empty_matrix(N, M);
+    double** Dt = empty_matrix(N, M);
     
     // DDt is D.Dt = MxM, so are Q and R
-    float** DDt = empty_matrix(M, M);
-    float** Q = empty_matrix(M, M);
-    float** R = empty_matrix(M, M);
+    double** DDt = empty_matrix(M, M);
+    double** Q = empty_matrix(M, M);
+    double** R = empty_matrix(M, M);
     
     // Compute Dt
     for(int i = 0; i < M; i++){
@@ -138,11 +138,11 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     print_matrix(DDt, M, M, "DDt\0");
 
     // Get Eigenvalues of DDt i.e. Q and R
-    float diff = 10;
-    float** Di = empty_matrix(M, M);
+    double diff = 10;
+    double** Di = empty_matrix(M, M);
     copy_matrix(Di, DDt, M, M);
-    float** Ei = diagonal_matrix(M);
-    float** Ei_temp = empty_matrix(M, M);
+    double** Ei = diagonal_matrix(M);
+    double** Ei_temp = empty_matrix(M, M);
     while(diff > 0.00001){
         diff = 0;
         qr(Q, R, Di, M);
@@ -157,7 +157,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     }
 
     // Extract eigenvalues into an array
-    float* eigenvalues = new float[M];
+    double* eigenvalues = new double[M];
     for(int i = 0; i < M; i++)
         eigenvalues[i] = fabs(Di[i][i]);
     
@@ -167,8 +167,8 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     for(int i = 0; i < M; i++)
         printf("Eigenvalue %d is %f\n", i, eigenvalues[i]);
 
-    float** sigma = empty_matrix(N, M);
-    float** sigma_inv = empty_matrix(M, N);
+    double** sigma = empty_matrix(N, M);
+    double** sigma_inv = empty_matrix(M, N);
     for(int i = 0; i < N; i++){
         *(*SIGMA+i) = sqrt(eigenvalues[i]);
         sigma[i][i] = sqrt(eigenvalues[i]);
@@ -176,7 +176,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         printf("Sigma %d = %f\n", i, *(*SIGMA+i));
     }
 
-    float** Vt = empty_matrix(M, M);
+    double** Vt = empty_matrix(M, M);
     // Compute V_T
     for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
@@ -202,9 +202,9 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         printf("\n");
     }
 
-    float** temp = empty_matrix(N, N);
-    float** temp2 = empty_matrix(N, N);
-    float** U_temp = empty_matrix(N, N);
+    double** temp = empty_matrix(N, N);
+    double** temp2 = empty_matrix(N, N);
+    double** U_temp = empty_matrix(N, N);
     matrix_multiply(temp, Dt, Ei, N, M, N);
     matrix_multiply(temp2, temp, sigma_inv, N, M, N);
 
@@ -223,11 +223,11 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         printf("\n");
     }
 
-    matrix_multiply(temp, U_temp, sigma, N, N, M);
-    matrix_multiply(temp2, temp, Vt, N, M, M);
+    // matrix_multiply(temp, U_temp, sigma, N, N, M);
+    // matrix_multiply(temp2, temp, Vt, N, M, M);
 
-    print_matrix(Dt, N, M, "Original Dt");
-    print_matrix(temp2, N, M, "Final Dt");
+    // print_matrix(Dt, N, M, "Original Dt");
+    // print_matrix(temp2, N, M, "Final Dt");
     
 }
 
@@ -246,14 +246,14 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
         printf("\n");
     }
 
-    float ret = float(retention)/100;
-    float sumeigen = 0;
+    double ret = double(retention)/100;
+    double sumeigen = 0;
     for(int i = 0; i < N; i++){
         sumeigen += *(SIGMA + i);
         printf("Sigma %d is %f\n", i, *(SIGMA + i));
     }
 
-    float sumret = 0; int k = 0;
+    double sumret = 0; int k = 0;
     for(k = 0; k < N; k++){
         sumret += (*(SIGMA + k) / sumeigen);
         if(sumret >= ret)
@@ -262,7 +262,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
 
     *K = k+1;
     printf("K = %d\n", *K);
-    float** W = empty_matrix(N, k+1);
+    double** W = empty_matrix(N, k+1);
     for(int i = 0; i < N; i++){
         for(int j = 0; j <= k; j++){
             W[i][j] = *(U + N*i + j);
@@ -277,7 +277,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
         for(int j = 0; j <= k; j++){
             DHatTemp[i*(k+1) + j] = 0;
             for(int p = 0; p < N; p++){
-                DHatTemp[i*N + j] += *(D + i*N + p) * W[p][j];
+                DHatTemp[i*(k+1) + j] += *(D + i*N + p) * W[p][j];
             }
             printf("%f ", DHatTemp[i*N + j]);
         }
