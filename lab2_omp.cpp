@@ -99,10 +99,10 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     // Dt is D transpose = NxM
     float** Dt = empty_matrix(N, M);
     
-    // DtD is Dt.D = NxN, so are Q and R
-    float** DtD = empty_matrix(N, N);
-    float** Q = empty_matrix(N, N);
-    float** R = empty_matrix(N, N);
+    // DDt is D.Dt = MxM, so are Q and R
+    float** DDt = empty_matrix(M, M);
+    float** Q = empty_matrix(M, M);
+    float** R = empty_matrix(M, M);
     
     // Compute Dt
     for(int i = 0; i < M; i++){
@@ -111,57 +111,61 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         }
     }
 
-    // Multiply Dt.D = NxM . MxN = NxN
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
-            for(int k = 0; k < M; k++)
-                DtD[i][j] += Dt[i][k] * D[k*N + j];
+    // Multiply D.Dt = MxN . NxM = MxM
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < M; j++){
+            for(int k = 0; k < N; k++)
+                DDt[i][j] += Dt[i][k] * D[k*N + j];
         }
     }
 
-    // Get Eigenvalues of DtD i.e. Q and R
+    // Get Eigenvalues of DDt i.e. Q and R
     float diff = 10;
-    float** Di = empty_matrix(N, N);
-    copy_matrix(Di, DtD, N, N);
-    float** Ei = diagonal_matrix(N);
+    float** Di = empty_matrix(M, M);
+    copy_matrix(Di, DDt, M, M);
+    float** Ei = diagonal_matrix(M);
     while(diff > 1){
         diff = 0;
-        qr(Q, R, Di, N);
-        diff += matrix_multiply(Di, R, Q, N, N, N);
-        diff += matrix_multiply(Ei, Ei, Q, N, N, N);
+        qr(Q, R, Di, M);
+        diff += matrix_multiply(Di, R, Q, M, M, M);
+        diff += matrix_multiply(Ei, Ei, Q, M, M, M);
     }
 
     // Extract eigenvalues into an array
-    float* eigenvalues = new float[N];
-    for(int i = 0; i < N; i++)
+    float* eigenvalues = new float[M];
+    for(int i = 0; i < M; i++)
         eigenvalues[i] = Di[i][i];
     
-    std::sort(eigenvalues, eigenvalues + N);
-    std::reverse(eigenvalues + N, eigenvalues);
+    std::sort(eigenvalues, eigenvalues + M);
+    std::reverse(eigenvalues + M, eigenvalues);
 
-    float** sigma = empty_matrix(N, N);
-    float** sigma_inv = empty_matrix(N, N);
+    float** sigma = empty_matrix(N, M);
+    float** sigma_inv = empty_matrix(M, N);
     for(int i = 0; i < N; i++){
         SIGMA[i][i] = sqrt(eigenvalues[i]);
         sigma_inv[i][i] = (1 / SIGMA[i][i]);
     }
 
-    qr(Q, R, DtD, N);
     // Computer V_T
-    for(int i = 0; i < N; i++){
-        for(int j = 0; j < N; j++){
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < M; j++){
             V_T[i][j] = R[j][i];
         }
     }
     
-    float** temp = empty_matrix(M, N);
-    for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j++){
-            for(int k = 0; k < N; k++)
-                temp[i][j] += D[M*i + k] * R[k][j];
+    float** temp = empty_matrix(N, M);
+    for(int i = 0; i < N; i++){
+        for(int j = 0; j < M; j++){
+            for(int k = 0; k < M; k++)
+                temp[i][j] += Dt[i][k] * R[k][j];
         }
     }
-    matrix_multiply(temp, temp, sigma_inv, M, N, N);
+    matrix_multiply(temp, temp, sigma_inv, N, M, N);
+
+    // Copy in U
+    for(int i = 0; i < N; i++)
+        for(int j = 0; j < N; j++)
+            *U[N*i + j] = temp[i][j]; 
 }
 
 // /*
