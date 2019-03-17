@@ -143,7 +143,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     copy_matrix(Di, DDt, M, M);
     float** Ei = diagonal_matrix(M);
     float** Ei_temp = empty_matrix(M, M);
-    while(diff > 1.5){
+    while(diff > 0.00001){
         diff = 0;
         qr(Q, R, Di, M);
         diff += matrix_multiply(Di, R, Q, M, M, M);
@@ -171,14 +171,17 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     float** sigma_inv = empty_matrix(M, N);
     for(int i = 0; i < N; i++){
         *(*SIGMA+i) = sqrt(eigenvalues[i]);
+        sigma[i][i] = sqrt(eigenvalues[i]);
         sigma_inv[i][i] = (1.0 / sqrt(eigenvalues[i]));
         printf("Sigma %d = %f\n", i, *(*SIGMA+i));
     }
 
-    // Computer V_T
+    float** Vt = empty_matrix(M, M);
+    // Compute V_T
     for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
             *(*V_T + M*i + j) = Ei[j][i];
+            Vt[i][j] = Ei[j][i];
         }
     }
     
@@ -201,13 +204,16 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 
     float** temp = empty_matrix(N, N);
     float** temp2 = empty_matrix(N, N);
+    float** U_temp = empty_matrix(N, N);
     matrix_multiply(temp, Dt, Ei, N, M, N);
     matrix_multiply(temp2, temp, sigma_inv, N, M, N);
 
     // Copy in U
     for(int i = 0; i < N; i++)
-        for(int j = 0; j < N; j++)
+        for(int j = 0; j < N; j++){
             *(*U + N*i + j) = temp2[i][j]; 
+            U_temp[i][j] = temp2[i][j];
+        }
 
     printf("U\n");
     // Print U
@@ -216,6 +222,13 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
             printf("%f ", *(*U + N*i + j));
         printf("\n");
     }
+
+    matrix_multiply(temp, U_temp, sigma, N, N, M);
+    matrix_multiply(temp2, temp, Vt, N, M, M);
+
+    print_matrix(Dt, N, M, "Original Dt");
+    print_matrix(temp2, N, M, "Final Dt");
+    
 }
 
 // /*
@@ -225,6 +238,14 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 // */
 void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** D_HAT, int *K)
 {
+    printf("\n\nPCA M:%d N:%d\n", M, N);
+
+    for(int i = 0; i < M; i++){
+        for(int j = 0; j < N; j++)
+            printf("%f ", *(D + i*N + j));
+        printf("\n");
+    }
+
     float ret = float(retention)/100;
     float sumeigen = 0;
     for(int i = 0; i < N; i++){
