@@ -84,7 +84,7 @@ double norm_vector(double* A, double N){
 float matrix_multiply(double** res, double** A, double** B, int N, int M, int N1){
     // Matrices shapes: A = NxM, B = MxN1, res = NxN1
     double diff = 0; double old;
-    #pragma omp parallel for reduction(max:diff) private(old)
+    // #pragma omp parallel for reduction(max:diff) private(old)
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N1; j++){
             old = res[i][j];
