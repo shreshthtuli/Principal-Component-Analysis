@@ -22,7 +22,9 @@ double** empty_matrix(int m, int n){
 }
 
 void copy_matrix(double** to, double** from, int n, int m){
+    #pragma omp parallel for
     for(int i = 0; i < m; i++){
+        #pragma omp parallel for
         for(int j = 0; j < n; j++)  
             to[i][j] = from[i][j];
     }
@@ -40,6 +42,7 @@ double** diagonal_matrix(int n){
 
 double dot(double** A, double** B, int cola, int colb, int N){
     double sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for(int i = 0; i < N; i++){
         sum += A[i][cola] * B[i][colb];
     }
@@ -48,6 +51,7 @@ double dot(double** A, double** B, int cola, int colb, int N){
 
 double norm(double** A, int cola, int N){
     double sum = 0;
+    #pragma omp parallel for reduction(+:sum)
     for(int i = 0; i < N; i++){
         sum += A[i][cola] * A[i][cola];
     }
@@ -56,6 +60,7 @@ double norm(double** A, int cola, int N){
 
 double norm_vector(double* A, double N){
     double sum = 0;
+    // #pragma omp parallel for reduction(+:sum)
     for(int i = 0; i < N; i++){
         sum += A[i] * A[i];
     }
@@ -63,16 +68,17 @@ double norm_vector(double* A, double N){
 }
 
 
-double matrix_multiply(double** res, double** A, double** B, int N, int M, int N1){
+float matrix_multiply(double** res, double** A, double** B, int N, int M, int N1){
     // Matrices shapes: A = NxM, B = MxN1, res = NxN1
-    double diff = 0; double old;
+    float diff = 0; double old;
+    #pragma omp parallel for reduction(max:diff) private(old)
     for(int i = 0; i < N; i++){
         for(int j = 0; j < N1; j++){
             old = res[i][j];
             res[i][j] = 0;
             for(int k = 0; k < M; k++)
                 res[i][j] += A[i][k] * B[k][j];
-            diff += fabs(fabs(res[i][j]) - fabs(old));
+            diff = std::max(diff, (float)fabs(fabs(res[i][j]) - fabs(old)));
         }
     }
     return diff;
@@ -80,16 +86,22 @@ double matrix_multiply(double** res, double** A, double** B, int N, int M, int N
 
 void qr(double** Q, double** R, double** D, int N){
     for(int i = 0; i < N; i++){
+        #pragma omp parallel for
         for(int j = 0; j < N; j++)
             Q[j][i] = D[j][i];
 
-        for(int j = 0; j < i; j++){
+        #pragma omp parallel for
+        for(int j = 0; j < i; j++)
             R[j][i] = dot(Q, D, j, i, N);
+        
+        for(int j = 0; j < i; j++){
+            #pragma omp parallel for
             for(int p = 0; p < N; p++)
-                Q[p][i] = Q[p][i] - R[j][i] * Q[p][j];
+                Q[p][i] = Q[p][i] -  R[j][i] * Q[p][j];
         }
             
         R[i][i] = norm(Q, i, N);
+        #pragma omp parallel for
         for(int j = 0; j < N; j++)
             Q[j][i] = Q[j][i]/R[i][i];
     }
@@ -142,14 +154,12 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     double** Di = empty_matrix(M, M);
     copy_matrix(Di, DDt, M, M);
     double** Ei = diagonal_matrix(M);
-    double** Ei_temp = empty_matrix(M, M);
-    while(diff > 0.00001){
-        diff = 0;
+    double** Ei_temp = empty_matrix(M, M); int count = 0;
+    while(diff >= 0.001){
         qr(Q, R, Di, M);
-        diff += matrix_multiply(Di, R, Q, M, M, M);
-        diff += matrix_multiply(Ei_temp, Ei, Q, M, M, M);
+        diff = std::max(matrix_multiply(Di, R, Q, M, M, M),  matrix_multiply(Ei_temp, Ei, Q, M, M, M));
         copy_matrix(Ei, Ei_temp, M, M);
-        printf("Diff = %f\n", diff);
+        printf("Diff = %f, %d\n", diff, count);count++;
         // print_matrix(Q, M, M, "Q\0");
         // print_matrix(R, M, M, "R\0");
         // print_matrix(Di, M, M, "Di\0");
@@ -178,6 +188,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 
     double** Vt = empty_matrix(M, M);
     // Compute V_T
+    #pragma omp parallel for collapse(2)
     for(int i = 0; i < M; i++){
         for(int j = 0; j < M; j++){
             *(*V_T + M*i + j) = Ei[j][i];
@@ -209,6 +220,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     matrix_multiply(temp2, temp, sigma_inv, N, M, N);
 
     // Copy in U
+    #pragma omp parallel for collapse(2)
     for(int i = 0; i < N; i++)
         for(int j = 0; j < N; j++){
             *(*U + N*i + j) = temp2[i][j]; 
@@ -223,11 +235,11 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         printf("\n");
     }
 
-    // matrix_multiply(temp, U_temp, sigma, N, N, M);
-    // matrix_multiply(temp2, temp, Vt, N, M, M);
+    matrix_multiply(temp, U_temp, sigma, N, N, M);
+    matrix_multiply(temp2, temp, Vt, N, M, M);
 
-    // print_matrix(Dt, N, M, "Original Dt");
-    // print_matrix(temp2, N, M, "Final Dt");
+    print_matrix(Dt, N, M, "Original Dt");
+    print_matrix(temp2, N, M, "Final Dt");
     
 }
 
@@ -263,13 +275,14 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     *K = k+1;
     printf("K = %d\n", *K);
     double** W = empty_matrix(N, k+1);
+    #pragma omp parallel
     for(int i = 0; i < N; i++){
         for(int j = 0; j <= k; j++){
             W[i][j] = *(U + N*i + j);
         }
     }
 
-    print_matrix(W, N, *K, "W\0");
+    // print_matrix(W, N, *K, "W\0");
 
     printf("D-Hat:\n");
     float* DHatTemp = (float *)malloc(sizeof(float)*((k+1) * M));
@@ -279,9 +292,9 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
             for(int p = 0; p < N; p++){
                 DHatTemp[i*(k+1) + j] += *(D + i*N + p) * W[p][j];
             }
-            printf("%f ", DHatTemp[i*N + j]);
+            // printf("%f ", DHatTemp[i*N + j]);
         }
-        printf("\n");
+        // printf("\n");
     }
 
     D_HAT = &DHatTemp;
