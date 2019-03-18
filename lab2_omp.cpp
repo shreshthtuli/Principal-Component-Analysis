@@ -12,7 +12,7 @@ double compare_matrices(double** A, double** B, int M, int N){
                 p = i; q = j; 
             }
         }
-    printf("i,j = %d,%d, %f\n", p, q, A[p][q]);
+    // printf("i,j = %d,%d, %f\n", p, q, A[p][q]);
     return diff;
 }
 
@@ -253,9 +253,9 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     matrix_multiply(temp, U_temp, sigma, N, N, M);
     matrix_multiply(temp2, temp, Vt, N, M, M);
 
-    print_matrix(Dt, N, M, "Original Dt");
-    print_matrix(temp2, N, M, "Final Dt");
-    printf("Comparison result diff = %f\n", compare_matrices(temp2, Dt, N, M));
+    // print_matrix(Dt, N, M, "Original Dt");
+    // print_matrix(temp2, N, M, "Final Dt");
+    // printf("Comparison result diff = %f\n", compare_matrices(temp2, Dt, N, M));
 
     
 }
@@ -267,7 +267,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 // */
 void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** D_HAT, int *K)
 {
-    printf("\n\nPCA M:%d N:%d\n", M, N);
+    // printf("\n\nPCA M:%d N:%d\n", M, N);
 
     /* // Print D
     for(int i = 0; i < M; i++){
@@ -280,7 +280,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     double sumeigen = 0;
     for(int i = 0; i < N; i++){
         sumeigen += *(SIGMA + i);
-        printf("Sigma %d is %f\n", i, *(SIGMA + i));
+        // printf("Sigma %d is %f\n", i, *(SIGMA + i));
     }
 
     double sumret = 0; int k = 0;
