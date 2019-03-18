@@ -12,7 +12,6 @@ double compare_matrices(double** A, double** B, int M, int N){
                 p = i; q = j; 
             }
         }
-    // printf("i,j = %d,%d, %f\n", p, q, A[p][q]);
     return diff;
 }
 
@@ -99,22 +98,22 @@ float matrix_multiply(double** res, double** A, double** B, int N, int M, int N1
 
 void qr(double** Q, double** R, double** D, int N){
     for(int i = 0; i < N; i++){
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(static)
         for(int j = 0; j < N; j++)
             Q[j][i] = D[j][i];
 
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(static)
         for(int j = 0; j < i; j++)
             R[j][i] = dot(Q, D, j, i, N);
         
         for(int j = 0; j < i; j++){
-            #pragma omp parallel for
+            #pragma omp parallel for schedule(static)
             for(int p = 0; p < N; p++)
                 Q[p][i] = Q[p][i] -  R[j][i] * Q[p][j];
         }
             
         R[i][i] = norm(Q, i, N);
-        #pragma omp parallel for
+        #pragma omp parallel for schedule(static)
         for(int j = 0; j < N; j++)
             Q[j][i] = Q[j][i]/R[i][i];
     }
@@ -130,11 +129,7 @@ void print_matrix(double** A, int M, int N, char* name){
     }
 }
 
-// /*
-// 	*****************************************************
-// 		TODO -- You must implement this function
-// 	*****************************************************
-// */
+
 void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
 {
     // Dt is D transpose = NxM
@@ -250,8 +245,8 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         printf("\n");
     } */
 
-    matrix_multiply(temp, U_temp, sigma, N, N, M);
-    matrix_multiply(temp2, temp, Vt, N, M, M);
+    // matrix_multiply(temp, U_temp, sigma, N, N, M);
+    // matrix_multiply(temp2, temp, Vt, N, M, M);
 
     // print_matrix(Dt, N, M, "Original Dt");
     // print_matrix(temp2, N, M, "Final Dt");
@@ -260,11 +255,7 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
     
 }
 
-// /*
-// 	*****************************************************
-// 		TODO -- You must implement this function
-// 	*****************************************************
-// */
+
 void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** D_HAT, int *K)
 {
     // printf("\n\nPCA M:%d N:%d\n", M, N);
@@ -293,7 +284,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     *K = k+1;
     printf("K = %d\n", *K);
     double** W = empty_matrix(N, k+1);
-    #pragma omp parallel
+    #pragma omp parallel for schedule(static)
     for(int i = 0; i < N; i++){
         for(int j = 0; j <= k; j++){
             W[i][j] = *(U + N*i + j);
