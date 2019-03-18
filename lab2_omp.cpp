@@ -260,12 +260,12 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
 {
     // printf("\n\nPCA M:%d N:%d\n", M, N);
 
-    /* // Print D
-    for(int i = 0; i < M; i++){
-        for(int j = 0; j < N; j++)
-            printf("%f ", *(D + i*N + j));
-        printf("\n");
-    } */
+    // Print D
+    // for(int i = 0; i < M; i++){
+    //     for(int j = 0; j < N; j++)
+    //         printf("%f ", *(D + i*N + j));
+    //     printf("\n");
+    // }
 
     double ret = double(retention)/100;
     double sumeigen = 0;
@@ -282,7 +282,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     }
 
     *K = k+1;
-    printf("K = %d\n", *K);
+    // printf("K = %d\n", *K);
     double** W = empty_matrix(N, k+1);
     #pragma omp parallel for schedule(static)
     for(int i = 0; i < N; i++){
@@ -294,7 +294,7 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     // Print W
     // print_matrix(W, N, *K, "W\0");
 
-    printf("D-Hat:\n");
+    // printf("D-Hat:\n");
     float* DHatTemp = (float *)malloc(sizeof(float)*((k+1) * M));
     for(int i = 0; i < M; i++){
         for(int j = 0; j <= k; j++){
@@ -302,9 +302,9 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
             for(int p = 0; p < N; p++){
                 *(DHatTemp + i*(k+1) + j) += *(D + i*N + p) * W[p][j];
             }
-            printf("%f ", DHatTemp[i*(k+1) + j]);
+            // printf("%f ", DHatTemp[i*(k+1) + j]);
         }
-        printf("\n");
+        // printf("\n");
     }
 
     D_HAT = &DHatTemp;
