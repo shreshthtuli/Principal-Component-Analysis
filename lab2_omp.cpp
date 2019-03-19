@@ -177,13 +177,36 @@ void SVD(int M, int N, float* D, float** U, float** SIGMA, float** V_T)
         // print_matrix(Ei, N, N, "Ei\0");
     }
 
+    // print_matrix(Di, N, N, "Di\0");
     // Extract eigenvalues into an array
     double* eigenvalues = new double[N];
-    for(int i = 0; i < N; i++)
+    double* eigenvalues1 = new double[N];
+    for(int i = 0; i < N; i++){
         eigenvalues[i] = fabs(Di[i][i]);
+        eigenvalues1[i] = fabs(Di[i][i]);
+    }
     
     std::sort(eigenvalues, eigenvalues + N);
     reverse_array(eigenvalues, N);
+    // for(int i = 0; i < N; i++){
+    //     printf("Eigenvals = %f, \t\t %f\n", eigenvalues[i], eigenvalues1[i]);
+    // }
+
+    // // Update Ei
+    Ei_temp = empty_matrix(N, N);
+    for(int j = 0; j < N; j++){
+        int p = 0;
+        // Find p i.e. index of jth max eigenvalue
+        for(p = 0; p < N; p++){
+            if(eigenvalues1[p] == eigenvalues[j])
+                break;
+        }
+        // printf("p=%d\n",p);
+        for(int i = 0; i < N; i++){
+            Ei_temp[i][j] = Ei[i][p];
+        }
+    }
+    copy_matrix(Ei, Ei_temp, N, N);
 
     // for(int i = 0; i < N; i++)
     //     printf("Eigenvalue %d is %f\n", i, eigenvalues[i]);
@@ -270,13 +293,13 @@ void PCA(int retention, int M, int N, float* D, float* U, float* SIGMA, float** 
     double ret = double(retention)/100;
     double sumeigen = 0;
     for(int i = 0; i < N; i++){
-        sumeigen += *(SIGMA + i);
+        sumeigen += *(SIGMA + i) * *(SIGMA + i);
         // printf("Sigma %d is %f\n", i, *(SIGMA + i));
     }
 
     double sumret = 0; int k = 0;
     for(k = 0; k < N; k++){
-        sumret += (*(SIGMA + k) / sumeigen);
+        sumret += (*(SIGMA + k) * *(SIGMA + k)/ sumeigen);
         if(sumret >= ret)
             break;
     }
